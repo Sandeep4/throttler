@@ -5,13 +5,8 @@ import (
 )
 
 type bucket struct {
-	tokens    int
+	tokens    int64
 	timestamp int64
-}
-
-type Rate struct {
-	quantity int
-	seconds  int64
 }
 
 type bucketThrottler struct {
@@ -27,16 +22,16 @@ func NewBucketThrottler(rate Rate) Throttler {
 }
 
 func (bt *bucketThrottler) ThrottleKey(key string) bool {
-	currentTimestamp := time.Now()
-	keyBuket, ok := bt.bucketStore[key]
-	tokens := 0
+	currentTimestamp := int64(time.Now().UnixNano())
+	keyBucket, ok := bt.bucketStore[key]
+	tokens := int64(0)
 	if ok {
-		tokens = keyBuket.tokens - (bt.rate.quantity * (currentTimestamp - keyBuket.timestamp) / (bt.rate.seconds * time.Second))
+		tokens = keyBucket.tokens - (bt.rate.Quantity * (currentTimestamp - keyBucket.timestamp) / (bt.rate.Seconds * int64(time.Second)))
 		if tokens < 0 {
 			tokens = 0
 		}
 	}
-	if tokens >= bt.rate.quantity {
+	if tokens >= bt.rate.Quantity {
 		return true
 	}
 	tokens++
